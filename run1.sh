@@ -8,6 +8,7 @@ accelerate launch --mixed_precision="fp16" train_text_to_image.py \
   --resolution=128 --center_crop --random_flip \
   --train_batch_size=32 \
   --num_train_epochs=2 \
+  --checkpointing_steps=10000 \
   --learning_rate=1e-05 \
   --max_grad_norm=1 \
   --lr_scheduler="constant" --lr_warmup_steps=0 \
