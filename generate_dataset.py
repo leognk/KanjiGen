@@ -99,6 +99,9 @@ def generate_dataset(data_dir, img_size, trainset_ratio):
 
 
 if __name__ == '__main__':
+
+    np.random.seed(0)
+    
     generate_dataset(
         data_dir='data',
         img_size=128,
