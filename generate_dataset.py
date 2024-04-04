@@ -2,8 +2,9 @@ import xml.etree.ElementTree as ET
 import os
 import cairosvg
 from pathlib import Path
-import json
 from tqdm import tqdm
+import numpy as np
+import csv
 
 
 def extract_attributes(data_dir):
@@ -14,7 +15,7 @@ def extract_attributes(data_dir):
     root = tree.getroot()
     entries = root.findall('character')
 
-    attributes = dict()
+    attributes = {}
     for entry in entries:
         # Extract kanji unicode.
         kanji_id = entry.find('codepoint/cp_value[@cp_type="ucs"]').text
@@ -43,7 +44,7 @@ def extract_strokes(data_dir, img_size):
     root = tree.getroot()
     entries = root.findall('kanji')
 
-    strokes = dict()
+    strokes = {}
     for entry in entries:
         # Extract kanji unicode.
         kanji_id = entry.get('id').split('_')[-1]
@@ -53,31 +54,48 @@ def extract_strokes(data_dir, img_size):
     return strokes
 
 
-def generate_dataset(data_dir, img_size):
+def generate_dataset(data_dir, img_size, trainset_ratio):
+    # Extract kanjis attributes & strokes from data files.
     attributes = extract_attributes(data_dir)
     strokes = extract_strokes(data_dir, img_size)
 
-    # Convert SVG strokes to PNG images and save on disk.
-    img_dir = os.path.join(data_dir, 'images')
-    Path(img_dir).mkdir(parents=True, exist_ok=True)
-    new_attributes = dict()
-    for kanji_id, strokes_i in tqdm(strokes.items()):
-        if kanji_id not in attributes:
-            continue
-        img_path = os.path.join(img_dir, f'{kanji_id}.png')
-        cairosvg.svg2png(bytestring=strokes_i.encode('utf-8'), write_to=img_path)
-        new_attributes[kanji_id] = attributes[kanji_id]
+    # Select the kanji ids in the intersection of attributes and strokes.
+    kanji_ids = np.array(set(attributes) & set(strokes))
+    n_kanjis = len(kanji_ids)
 
-    # Save kanji attributes to json file.
-    filename = os.path.join(data_dir, 'attributes.json')
-    with open(filename, 'w') as f:
-        json.dump(new_attributes, f)
+    # Split the kanjis into training and validation sets.
+    np.random.shuffle(kanji_ids)
+    trainset_size = round(trainset_ratio * n_kanjis)
+
+    # Format kanji meanings into rows to save as a csv file,
+    # and convert SVG strokes to PNG images and save on disk.
+    metadata = {'train': [], 'val': []}
+    img_dir = os.path.join(data_dir, 'images')
+    for split in ['train', 'val']:
+        metadata[split].append(['file_name', 'text'])
+        Path(os.path.join(img_dir, split)).mkdir(parents=True, exist_ok=True)
+
+    for i in tqdm(range(n_kanjis)):
+        split = 'train' if i < trainset_size else 'val'
+        kanji_id = kanji_ids[i]
+        filename = f'{str(i).zfill(len(str(n_kanjis)))}.png'
+        metadata[split].append([filename, attributes[kanji_id]['meanings']])
+        filepath = os.path.join(img_dir, split, filename)
+        cairosvg.svg2png(bytestring=strokes[kanji_id].encode('utf-8'), write_to=filepath)
+
+    # Save kanji meanings to csv files.
+    for split in ['train', 'val']:
+        filename = os.path.join(img_dir, split, 'metadata.csv')
+        with open(filename, 'w') as f:
+            writer = csv.writer(f)
+            writer.writerows(metadata[split])
         
-    print("Dataset generation completed.")
+    print("The dataset has been generated.")
 
 
 if __name__ == '__main__':
     generate_dataset(
         data_dir='data',
         img_size=128,
+        trainset_ratio=0.8,
     )
