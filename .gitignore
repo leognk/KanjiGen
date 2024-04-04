@@ -1,6 +1,7 @@
 __pycache__/
 .vscode/
 
+diffusers/
 data/
 log/
 test[0-9]*.py
