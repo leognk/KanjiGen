@@ -60,7 +60,11 @@ def generate_dataset(data_dir, img_size, trainset_ratio):
     strokes = extract_strokes(data_dir, img_size)
 
     # Select the kanji ids in the intersection of attributes and strokes.
-    kanji_ids = np.array(list(set(attributes) & set(strokes)))
+    kanji_ids = set(attributes) & set(strokes)
+    # Remove kanjis which don't have meaning in their list.
+    for kanji_id in kanji_ids:
+        if not attributes[kanji_id]['meanings']:
+            kanji_ids.remove(kanji_id)
     n_kanjis = len(kanji_ids)
 
     # Split the kanjis into training and validation sets.
@@ -80,7 +84,8 @@ def generate_dataset(data_dir, img_size, trainset_ratio):
         kanji_id = kanji_ids[i]
         filename = f'{str(i + 1).zfill(len(str(n_kanjis)))}.png'
         # We choose to use only the first meaning in the list.
-        metadata[split].append([filename, attributes[kanji_id]['meanings'][0]])
+        meaning = attributes[kanji_id]['meanings'][0]
+        metadata[split].append([filename, meaning])
         filepath = os.path.join(img_dir, split, filename)
         cairosvg.svg2png(bytestring=strokes[kanji_id].encode('utf-8'), write_to=filepath)
 
