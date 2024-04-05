@@ -30,6 +30,7 @@ def extract_attributes(data_dir):
 
 svg_format = """
 <svg xmlns="http://www.w3.org/2000/svg" width="{img_size}" height="{img_size}" viewBox="0 0 109 109">
+<rect width="100%" height="100%" fill="#ffffff"/>
 <g style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;">
 {content}
 </g>
