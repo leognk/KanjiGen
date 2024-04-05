@@ -197,7 +197,7 @@ def log_validation(vae, text_encoder, tokenizer, unet, args, accelerator, weight
     return images
 
 
-def parse_args():
+def parse_args(args):
     parser = argparse.ArgumentParser(description="Simple example of a training script.")
     parser.add_argument(
         "--input_perturbation", type=float, default=0, help="The scale of input perturbation. Recommended 0.1."
@@ -484,7 +484,7 @@ def parse_args():
         ),
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     env_local_rank = int(os.environ.get("LOCAL_RANK", -1))
     if env_local_rank != -1 and env_local_rank != args.local_rank:
         args.local_rank = env_local_rank
@@ -500,8 +500,8 @@ def parse_args():
     return args
 
 
-def main():
-    args = parse_args()
+def main(args):
+    args = parse_args(args)
 
     if args.report_to == "wandb" and args.hub_token is not None:
         raise ValueError(
@@ -1094,4 +1094,22 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+
+    # args = None
+
+    args = """
+    --pretrained_model_name_or_path=CompVis/stable-diffusion-v1-4
+    --train_data_dir=data/images
+    --use_ema
+    --resolution=128 --center_crop --random_flip
+    --train_batch_size=32
+    --max_train_steps=5
+    --checkpointing_steps=10000
+    --learning_rate=1e-05
+    --max_grad_norm=1
+    --lr_scheduler=constant --lr_warmup_steps=0
+    --output_dir=exp/model1
+    --report_to=wandb
+    """.split()
+
+    main(args)
