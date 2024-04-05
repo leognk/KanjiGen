@@ -210,6 +210,11 @@ def parse_args(args):
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
+        "--from_scratch",
+        action="store_true",
+        help="Whether to train from random weights.",
+    )
+    parser.add_argument(
         "--revision",
         type=str,
         default=None,
@@ -595,10 +600,16 @@ def main(args):
         vae = AutoencoderKL.from_pretrained(
             args.pretrained_model_name_or_path, subfolder="vae", revision=args.revision, variant=args.variant
         )
-
-    unet = UNet2DConditionModel.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="unet", revision=args.non_ema_revision
-    )
+    
+    if args.from_scratch:
+        unet = UNet2DConditionModel(
+            sample_size=args.resolution // 8,
+            cross_attention_dim=768,
+        )
+    else:
+        unet = UNet2DConditionModel.from_pretrained(
+            args.pretrained_model_name_or_path, subfolder="unet", revision=args.non_ema_revision
+        )
 
     # Freeze vae and text_encoder and set unet to trainable
     vae.requires_grad_(False)
@@ -607,9 +618,15 @@ def main(args):
 
     # Create EMA for the unet.
     if args.use_ema:
-        ema_unet = UNet2DConditionModel.from_pretrained(
-            args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision, variant=args.variant
-        )
+        if args.from_scratch:
+            ema_unet = UNet2DConditionModel(
+                sample_size=args.resolution // 8,
+                cross_attention_dim=768,
+            )
+        else:
+            ema_unet = UNet2DConditionModel.from_pretrained(
+                args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision, variant=args.variant
+            )
         ema_unet = EMAModel(ema_unet.parameters(), model_cls=UNet2DConditionModel, model_config=ema_unet.config)
 
     if args.enable_xformers_memory_efficient_attention:
@@ -1097,15 +1114,18 @@ if __name__ == "__main__":
 
     # args = None
 
+    # num_train_epochs
+    # max_train_steps
     args = """
     --pretrained_model_name_or_path=CompVis/stable-diffusion-v1-4
+    --from_scratch
     --train_data_dir=data/images
     --use_ema
     --resolution=128 --center_crop --random_flip
     --train_batch_size=32
-    --max_train_steps=5
+    --num_train_epochs=2
     --checkpointing_steps=10000
-    --learning_rate=1e-05
+    --learning_rate=1e-03
     --max_grad_norm=1
     --lr_scheduler=constant --lr_warmup_steps=0
     --output_dir=exp/model1
