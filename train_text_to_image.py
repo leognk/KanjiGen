@@ -1135,6 +1135,7 @@ if __name__ == "__main__":
 
     # num_train_epochs
     # max_train_steps
+    # --lr_scheduler=cosine --lr_warmup_steps=500
     args = """
     --pretrained_model_name_or_path=CompVis/stable-diffusion-v1-4
     --from_scratch
@@ -1142,9 +1143,9 @@ if __name__ == "__main__":
     --train_data_dir=data/images
     --use_ema
     --resolution=128 --center_crop
-    --train_batch_size=4
-    --max_train_steps=5
-    --checkpointing_steps=10000
+    --train_batch_size=8
+    --max_train_steps=20000
+    --checkpointing_steps=5000
     --learning_rate=1e-04
     --max_grad_norm=1
     --lr_scheduler=cosine --lr_warmup_steps=500
