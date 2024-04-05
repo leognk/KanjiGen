@@ -3,7 +3,6 @@ import os
 import cairosvg
 from pathlib import Path
 from tqdm import tqdm
-import numpy as np
 import csv
 
 
@@ -55,7 +54,7 @@ def extract_strokes(data_dir, img_size):
     return strokes
 
 
-def generate_dataset(data_dir, img_size, trainset_ratio):
+def generate_dataset(data_dir, img_size):
     # Extract kanjis attributes & strokes from data files.
     attributes = extract_attributes(data_dir)
     strokes = extract_strokes(data_dir, img_size)
@@ -63,48 +62,36 @@ def generate_dataset(data_dir, img_size, trainset_ratio):
     # Select the kanji ids in the intersection of attributes and strokes.
     kanji_ids = set(attributes) & set(strokes)
     # Remove kanjis which don't have meaning in their list.
-    kanji_ids = {kanji_id for kanji_id in kanji_ids if attributes[kanji_id]['meanings']}
-    kanji_ids = np.array(list(kanji_ids))
-    n_kanjis = len(kanji_ids)
-
-    # Split the kanjis into training and validation sets.
-    np.random.shuffle(kanji_ids)
-    trainset_size = round(trainset_ratio * n_kanjis)
+    kanji_ids = [kanji_id for kanji_id in kanji_ids if attributes[kanji_id]['meanings']]
+    kanji_ids.sort()
 
     # Format kanji meanings into rows to save as a csv file,
     # and convert SVG strokes to PNG images and save on disk.
-    metadata = {'train': [], 'val': []}
+    metadata = [['file_name', 'text']]
     img_dir = os.path.join(data_dir, 'images')
-    for split in ['train', 'val']:
-        metadata[split].append(['file_name', 'text'])
-        Path(os.path.join(img_dir, split)).mkdir(parents=True, exist_ok=True)
+    Path(img_dir).mkdir(parents=True, exist_ok=True)
 
-    for i in tqdm(range(n_kanjis)):
-        split = 'train' if i < trainset_size else 'val'
-        kanji_id = kanji_ids[i]
-        filename = f'{str(i + 1).zfill(len(str(n_kanjis)))}.png'
+    for i, kanji_id in tqdm(enumerate(kanji_ids)):
+        max_digits = len(str(len(kanji_ids)))
+        filename = f'{str(i + 1).zfill(max_digits)}.png'
         # We choose to use only the first meaning in the list.
         meaning = attributes[kanji_id]['meanings'][0]
-        metadata[split].append([filename, meaning])
-        filepath = os.path.join(img_dir, split, filename)
+        metadata.append([filename, meaning])
+        filepath = os.path.join(img_dir, filename)
         cairosvg.svg2png(bytestring=strokes[kanji_id].encode('utf-8'), write_to=filepath)
 
     # Save kanji meanings to csv files.
-    for split in ['train', 'val']:
-        filename = os.path.join(img_dir, split, 'metadata.csv')
-        with open(filename, 'w') as f:
-            writer = csv.writer(f)
-            writer.writerows(metadata[split])
+    filename = os.path.join(img_dir, 'metadata.csv')
+    with open(filename, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(metadata)
         
     print("The dataset has been generated.")
 
 
 if __name__ == '__main__':
-
-    np.random.seed(0)
     
     generate_dataset(
         data_dir='data',
         img_size=128,
-        trainset_ratio=0.8,
     )
