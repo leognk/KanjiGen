@@ -212,7 +212,12 @@ def parse_args(args):
     parser.add_argument(
         "--from_scratch",
         action="store_true",
-        help="Whether to train from random weights.",
+        help="Whether or not to train from random weights.",
+    )
+    parser.add_argument(
+        "--no_vae",
+        action="store_true",
+        help="Whether or not to use VAE.",
     )
     parser.add_argument(
         "--revision",
@@ -597,15 +602,29 @@ def main(args):
         text_encoder = CLIPTextModel.from_pretrained(
             args.pretrained_model_name_or_path, subfolder="text_encoder", revision=args.revision, variant=args.variant
         )
-        vae = AutoencoderKL.from_pretrained(
-            args.pretrained_model_name_or_path, subfolder="vae", revision=args.revision, variant=args.variant
+        if args.no_vae:
+            vae = AutoencoderKL()
+            vae.encoder = torch.nn.Identity()
+            vae.decoder = torch.nn.Identity()
+            vae.quant_conv = torch.nn.Identity()
+            vae.post_quant_conv = torch.nn.Identity()
+        else:
+            vae = AutoencoderKL.from_pretrained(
+                args.pretrained_model_name_or_path, subfolder="vae", revision=args.revision, variant=args.variant
+            )
+    
+    def init_unet():
+        channels = 3 if args.no_vae else 4
+        return UNet2DConditionModel(
+            sample_size=args.resolution,
+            in_channels=channels,
+            out_channels=channels,
+            block_out_channels=(96, 160, 320, 320), # (320, 640, 1280, 1280)
+            cross_attention_dim=768,
         )
     
     if args.from_scratch:
-        unet = UNet2DConditionModel(
-            sample_size=args.resolution // 8,
-            cross_attention_dim=768,
-        )
+        unet = init_unet()
     else:
         unet = UNet2DConditionModel.from_pretrained(
             args.pretrained_model_name_or_path, subfolder="unet", revision=args.non_ema_revision
@@ -619,10 +638,7 @@ def main(args):
     # Create EMA for the unet.
     if args.use_ema:
         if args.from_scratch:
-            ema_unet = UNet2DConditionModel(
-                sample_size=args.resolution // 8,
-                cross_attention_dim=768,
-            )
+            ema_unet = init_unet()
         else:
             ema_unet = UNet2DConditionModel.from_pretrained(
                 args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision, variant=args.variant
@@ -926,8 +942,11 @@ def main(args):
         for step, batch in enumerate(train_dataloader):
             with accelerator.accumulate(unet):
                 # Convert images to latent space
-                latents = vae.encode(batch["pixel_values"].to(weight_dtype)).latent_dist.sample()
-                latents = latents * vae.config.scaling_factor
+                if args.no_vae:
+                    latents = batch["pixel_values"]
+                else:
+                    latents = vae.encode(batch["pixel_values"].to(weight_dtype)).latent_dist.sample()
+                    latents = latents * vae.config.scaling_factor
 
                 # Sample noise that we'll add to the latents
                 noise = torch.randn_like(latents)
@@ -1119,11 +1138,12 @@ if __name__ == "__main__":
     args = """
     --pretrained_model_name_or_path=CompVis/stable-diffusion-v1-4
     --from_scratch
+    --no_vae
     --train_data_dir=data/images
     --use_ema
-    --resolution=128 --center_crop --random_flip
-    --train_batch_size=16
-    --num_train_epochs=100
+    --resolution=128 --center_crop
+    --train_batch_size=4
+    --max_train_steps=5
     --checkpointing_steps=10000
     --learning_rate=1e-04
     --max_grad_norm=1
