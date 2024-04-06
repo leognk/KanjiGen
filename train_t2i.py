@@ -614,12 +614,28 @@ def main(args):
             )
     
     def init_unet():
-        channels = 3 if args.no_vae else 4
+        channels = 1 if args.no_vae else 4
         return UNet2DConditionModel(
             sample_size=args.resolution,
             in_channels=channels,
             out_channels=channels,
-            block_out_channels=(96, 160, 320, 320), # (320, 640, 1280, 1280)
+            down_block_types=(
+                "DownBlock2D",
+                "CrossAttnDownBlock2D",
+                "CrossAttnDownBlock2D",
+                "CrossAttnDownBlock2D",
+                "DownBlock2D",
+            ),
+            mid_block_type="UNetMidBlock2DCrossAttn",
+            up_block_types=(
+                "UpBlock2D",
+                "CrossAttnUpBlock2D",
+                "CrossAttnUpBlock2D",
+                "CrossAttnUpBlock2D",
+                "UpBlock2D",
+            ),
+            block_out_channels=(64, 128, 256, 512, 512), # (320, 640, 1280, 1280)
+            layers_per_block=2,
             cross_attention_dim=768,
         )
     
@@ -806,7 +822,10 @@ def main(args):
     )
 
     def preprocess_train(examples):
-        images = [image.convert("RGB") for image in examples[image_column]]
+        if args.no_vae:
+            images = [image.convert("L") for image in examples[image_column]]
+        else:
+            images = [image.convert("RGB") for image in examples[image_column]]
         examples["pixel_values"] = [train_transforms(image) for image in images]
         examples["input_ids"] = tokenize_captions(examples)
         return examples
@@ -1143,10 +1162,10 @@ if __name__ == "__main__":
     --train_data_dir=data/images
     --use_ema
     --resolution=128 --center_crop
-    --train_batch_size=8
-    --max_train_steps=20000
-    --checkpointing_steps=5000
-    --learning_rate=1e-04
+    --train_batch_size=16
+    --max_train_steps=100000
+    --checkpointing_steps=20000
+    --learning_rate=1e-4
     --max_grad_norm=1
     --lr_scheduler=cosine --lr_warmup_steps=500
     --output_dir=exp/model1
