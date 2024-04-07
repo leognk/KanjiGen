@@ -1163,12 +1163,13 @@ if __name__ == "__main__":
     --use_ema
     --resolution=128 --center_crop
     --train_batch_size=16
-    --max_train_steps=100000
-    --checkpointing_steps=20000
+    --max_train_steps=200000
+    --checkpointing_steps=10000
     --learning_rate=1e-4
     --max_grad_norm=1
     --lr_scheduler=cosine --lr_warmup_steps=500
-    --output_dir=exp/model1
+    --snr_gamma=5.0
+    --output_dir=exp/model2
     --report_to=wandb
     """.split()
 
