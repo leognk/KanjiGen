@@ -10,7 +10,9 @@ from diffusers import StableDiffusionPipeline, UNet2DConditionModel, Autoencoder
 model_dir = os.path.join("exp", "model2")
 checkpoint = 200000
 
-prompts = ["language model", "armed fish"]
+prompts = [
+    "language model",
+]
 num_inference_steps = 200
 num_images_per_prompt = 2
 
