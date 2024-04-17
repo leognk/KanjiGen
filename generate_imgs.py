@@ -34,7 +34,7 @@ pipe.to("cuda")
 
 # Generate and save images for each prompt
 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-save_path = os.path.join(model_dir, "images", f"timestamp")
+save_path = os.path.join(model_dir, "images", timestamp)
 Path(save_path).mkdir(parents=True, exist_ok=True)
 for prompt in tqdm(prompts):
     imgs = pipe(
