@@ -634,7 +634,7 @@ def main(args):
                 "CrossAttnUpBlock2D",
                 "UpBlock2D",
             ),
-            block_out_channels=(64, 128, 256, 512, 512), # (320, 640, 1280, 1280)
+            block_out_channels=(64, 128, 256, 512, 512),
             layers_per_block=2,
             cross_attention_dim=768,
         )
@@ -1150,11 +1150,6 @@ def main(args):
 
 if __name__ == "__main__":
 
-    # args = None
-
-    # num_train_epochs
-    # max_train_steps
-    # --lr_scheduler=cosine --lr_warmup_steps=500
     args = """
     --pretrained_model_name_or_path=CompVis/stable-diffusion-v1-4
     --from_scratch
