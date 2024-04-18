@@ -11,7 +11,10 @@ model_dir = os.path.join("exp", "model2")
 checkpoint = 200000
 
 prompts = [
+    "armed fish",
     "language model",
+    "climate change",
+    "baby robot",
 ]
 num_inference_steps = 200
 num_images_per_prompt = 2
