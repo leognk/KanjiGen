@@ -17,7 +17,7 @@ prompts = [
     "baby robot",
 ]
 num_inference_steps = 200
-num_images_per_prompt = 2
+num_images_per_prompt = 10
 
 
 # Load UNet
