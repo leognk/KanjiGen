@@ -8,7 +8,8 @@ import csv
 
 def extract_attributes(data_dir):
     """
-    Returns: A dictionary mapping a kanji's unicode to its attributes.
+    Return a dictionary mapping a kanji's unicode to its attributes (reading & meaning)
+    from the kanjidic2.xml file.
     """
     tree = ET.parse(os.path.join(data_dir, 'kanjidic2.xml'))
     root = tree.getroot()
@@ -38,7 +39,8 @@ svg_format = """
 
 def extract_strokes(data_dir, img_size):
     """
-    Returns: A dictionary mapping a kanji's unicode to its strokes in SVG format.
+    Return a dictionary mapping a kanji's unicode to its strokes in SVG format
+    from the kanjivg.xml file.
     """
     tree = ET.parse(os.path.join(data_dir, 'kanjivg.xml'))
     root = tree.getroot()
@@ -55,6 +57,7 @@ def extract_strokes(data_dir, img_size):
 
 
 def generate_dataset(data_dir, img_size):
+    """Generate the kanji dataset with the images and their corresponding meaning."""
     # Extract kanjis attributes & strokes from data files.
     attributes = extract_attributes(data_dir)
     strokes = extract_strokes(data_dir, img_size)
