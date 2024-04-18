@@ -960,10 +960,10 @@ def main(args):
         train_loss = 0.0
         for step, batch in enumerate(train_dataloader):
             with accelerator.accumulate(unet):
-                # Convert images to latent space
                 if args.no_vae:
                     latents = batch["pixel_values"]
                 else:
+                    # Convert images to latent space
                     latents = vae.encode(batch["pixel_values"].to(weight_dtype)).latent_dist.sample()
                     latents = latents * vae.config.scaling_factor
 
