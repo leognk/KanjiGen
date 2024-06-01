@@ -1,14 +1,14 @@
 # Generating Novel Kanjis with Diffusion Model
 
-In this project, I trained from scratch a pixel-level diffusion model to generate kanjis, which are Chinese characters used in Japanese, conditioned on their meaning. After training, we can give to the model a small description of a kanji that doesn't exist, and make it generate a plausible kanji corresponding to this description.
+In this project, I trained from scratch a pixel-level diffusion model to generate kanjis (Chinese characters used in Japanese) conditioned on their meaning. After training, we can ask the model to generate a plausible kanji that doesn't exist from a small description of our choice.
 
 ## Data
 
-The data is based on kanjidic2 and KanjiVG taken from [here](https://github.com/Gnurou/tagainijisho).
+The data is from kanjidic2 and KanjiVG taken from [here](https://github.com/Gnurou/tagainijisho).
 
 ## Code
 
-The code is modified from HuggingFace diffusers example code of training a text-to-image stable diffusion [here](https://github.com/huggingface/diffusers/blob/main/examples/text_to_image/train_text_to_image.py). I modified the code so that I could train the model directly on the pixels rather than the latents produced by the VAE's encoder.
+The code is modified from HuggingFace diffusers example code of training a text-to-image stable diffusion [here](https://github.com/huggingface/diffusers/blob/main/examples/text_to_image/train_text_to_image.py). I modified the code so that I could train the model directly on the pixels rather than the latents produced by the VAE's encoder, so that I don't need to train separetely a VAE from scratch.
 
 ## Samples
 
